@@ -1,6 +1,5 @@
 require daslib/media
 require daslib/decs_boost
-require structurs
 require helpers
 
 def create_field( start: int2; gap: int; field_size: int; block_size: int )

@@ -2,10 +2,21 @@ require daslib/media
 require graphics
 require daslib/random
 require daslib/decs_boost
-require structurs
 require helpers
 
-var seed = random_seed(int(get_time_after_start()))
+[decs_template]
+struct GameOver
+    is_gameover: bool
+[decs_template]
+struct Updating
+    is_merged: bool
+[decs_template]
+struct Merge
+    eid_merge: EntityId
+    value: int
+
+var 
+    seed = random_seed(int(get_time_after_start()))
 
 def create_direction()
     create_entity <| @ ( eid, cmp )
@@ -39,41 +50,37 @@ def move_block_if_need(eid: EntityId const&#; old_pos: int2; new_pos: int2; valu
             cmp |> set("value", value + neibor.value)
             cmp |> set("is_merged", true)
         delete_entity(eid)
+var count_attempt = 0
 
-// [decs(stage = second_block)]
-// def create_block(var start_position: int2; block_size: int; size: int; gap: int)
-//     var pos = int2( 1, 0 )
-//     create_entity <| @ ( eid, cmp )
-//         cmp |> set("eid", eid)
-//         cmp |> set("pos", pos)
-//         cmp |> set("is_merged", false)
-//         cmp |> set("value", 4)
-        
-//     var pos1 = int2( 2, 0 )
-//     create_entity <| @ ( eid, cmp )
-//         cmp |> set("eid", eid)
-//         cmp |> set("pos", pos1)
-//         cmp |> set("is_merged", false)
-//         cmp |> set("value", 8)
-//     var pos2 = int2( 0, 1 )
-//     create_entity <| @ ( eid, cmp )
-//         cmp |> set("eid", eid)
-//         cmp |> set("pos", pos2)
-//         cmp |> set("is_merged", false)
-//         cmp |> set("value", 16)
+def find_new_pos()
+    count_attempt += 1
+    var new_pos = int2( get_random(0, 3), get_random(0, 3) )
+    var founded = false
+    query <| $ ( eid: EntityId; pos: int2; value: int)
+        if(new_pos == pos)
+            founded = true
+    if (count_attempt == 16)
+        return int2(-1,-1)
+    if (founded)
+        return find_new_pos()
+    count_attempt = 0
+    return new_pos
+let game_over_const = int2(-1,-1)
 
 def create_block()
-    var random = get_random(0, 3)
-    var random2 = get_random(0, 3)
-    print("{random} {random2}")
-    var pos = int2( 0, 0 )
+    var find_pos = find_new_pos()
+    if (find_pos == game_over_const)
+        create_entity <| @ ( eid, cmp )
+            cmp |> set("eid", eid)
+            apply_decs_template(cmp, [[GameOver]])
+            
     create_entity <| @ ( eid, cmp )
         cmp |> set("eid", eid)
-        cmp |> set("pos", pos)
+        cmp |> set("pos", find_pos)
         cmp |> set("is_merged", false)
-        cmp |> set("value", 4)
+        cmp |> set("value", get_random(2, 4))
 
-[decs(stage = draw)]
+[decs(stage = draw_blocks)]
 def draw_blocks(var pos: int2;  value: int)
     var start = int2()
     var gap_field = 0
@@ -86,10 +93,11 @@ def draw_blocks(var pos: int2;  value: int)
 
     fill_rect(pos_x, pos_y, 75, 75, 0xFFFFFF)
     text_out(pos_x + (75/2), pos_y + (75/2), "{value}", 0x000000)
-
-[decs(stage = add_new_block)]
-def add_new_block( eid: EntityId )
-    print("add_new_block")
+    
+// [decs(stage = game_over)]
+// def game_over( eid_a: EntityId; game_over: GameOver)
+//     query <| $ ( eid, pos )
+//         delete_entity(eid)
 
 [decs(stage = update_blocks)]
 def update_blocks( eid: EntityId; pos: int2; value: int; is_merged: bool; updating: Updating)
@@ -97,22 +105,24 @@ def update_blocks( eid: EntityId; pos: int2; value: int; is_merged: bool; updati
         move_block_if_need(eid, pos, pos + direction, value, is_merged)
 
 def get_direction()
-    if get_key_up(VK_LEFT)
+    if get_key_down(VK_LEFT)
         return int2( -1, 0)
-    if get_key_up(VK_RIGHT)
+    if get_key_down(VK_RIGHT)
         return int2( 1, 0)
-    if get_key_up(VK_UP)
+    if get_key_down(VK_UP)
         return int2( 0, -1)
-    if get_key_up(VK_DOWN)
+    if get_key_down(VK_DOWN)
         return int2( 0, 1)
     return int2()
 
 [decs(stage = update_controls)]
 def update_controls(eid: EntityId; var direction: int2 )
-    if get_key_up(VK_LEFT) || get_key_up(VK_RIGHT) || get_key_up(VK_UP) || get_key_up(VK_DOWN)
+    if get_key_down(VK_LEFT) || get_key_down(VK_RIGHT) || get_key_down(VK_UP) || get_key_down(VK_DOWN)
         eid |> update_entity <| @ ( eid, cmp )
             cmp |> set("direction", get_direction())
         query <| $ ( eid: EntityId; pos: int2; value: int)
             eid |> update_entity <| @ ( eid, cmp )
                 cmp |> set("is_merged", false)
                 apply_decs_template(cmp, [[Updating]])
+    if get_key_up(VK_LEFT) || get_key_up(VK_RIGHT) || get_key_up(VK_UP) || get_key_up(VK_DOWN)
+        create_block()

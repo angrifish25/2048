@@ -18,6 +18,7 @@ def initialize
     restart()
     create_field(start_pos, gap, 400, block_size)
     create_block()
+    create_block()
     commit()
     create_direction()
     set_window_title("2048")
@@ -30,12 +31,14 @@ def act(dt: float)
     decs_stage("update_blocks")
     decs_stage("merge_blocks")
     decs_stage("add_new_block")
+    decs_stage("game_over")
     return
 
 [export]
 def draw
-    // fill_rect(0, 0, screen_width, screen_height, 0xFFFFFF)
+    fill_rect(0, 0, screen_width, screen_height, 0xFFFFFF)
     decs_stage("draw")
+    decs_stage("draw_blocks")
     
     return
 
