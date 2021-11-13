@@ -105,6 +105,26 @@ def draw_game_over(var game_over: GameOver)
     fill_rect(start.x, start.y, size_field, size_field, 0xFFFFFF)
     text_out(start.x + (size_field/2), start.y + (size_field/2), "Game Over\n press Enter for restart", 0x000000)
 
+[decs(stage = draw_best_score)]
+def draw_best_score(eid: EntityId)
+    var start = int2()
+    var size_field = 0
+    var best_score = 0
+    
+    if (local_storage_has_key("best_score"))
+        best_score = int(local_storage_get("best_score"))
+
+    query <| $ ( start_position : int2; size: int )
+        start = start_position
+        size_field = size
+
+    query <| $ ( eid: EntityId; value: int)
+        if (best_score < value)
+            best_score = value
+            local_storage_set("best_score", string(best_score))
+
+    text_out(start.x + (size_field/2), start.y - 50, "Best score: {best_score}", 0x000000)
+
 [decs(stage = draw_blocks)]
 def draw_blocks(var pos: int2;  value: int)
     var start = int2()

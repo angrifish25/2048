@@ -39,6 +39,7 @@ def draw
     fill_rect(0, 0, screen_width, screen_height, 0xFFFFFF)
     decs_stage("draw")
     decs_stage("draw_blocks")
+    decs_stage("draw_best_score")
     decs_stage("draw_game_over")
     
 options debugger
